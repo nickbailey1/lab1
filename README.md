@@ -2,16 +2,28 @@
 
 ## Pipe Up
 
-One sentence description
+This program mimics the behavior of piping programs in Unix systems.
 
 ## Building
 
-Explain briefly how to build your program
+The executable file can be built using the following command which executes the make routine written in Makefile:
+```make```
 
 ## Running
 
-Show an example run of your program, using at least two additional arguments, and what to expect
+The program can be run using the following syntax:
+
+```./pipe exec1 exec2 exec3 ... execN```
+
+where each argument is a program. The output of the first program will be used as input for the next, and so on. pipe does not support arguments for the individual programs.
+
+Examples:
+```./pipe ls cat wc```
+```./pipe ls cat```
+```./pipe ls```
+```./pipe ps wc```
 
 ## Cleaning up
 
-Explain briefly how to clean up all binary files
+Binaries can be cleaned up using the following command:
+```make clean```
