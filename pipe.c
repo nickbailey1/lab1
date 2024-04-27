@@ -6,11 +6,32 @@
 
 int main(int argc, char *argv[])
 {
-  /*
-  int numPipes = argc - 2;
-  int pipes[numPipes][2]; // array of pipes needed
+  if (argc < 2) {
+    fprintf(stderr, "Must provide at least one argument.");
+    exit(EXIT_FAILURE);
+  }
 
-  // create all of the necesssary pipes, exit if any pipe creation fails
+  // only one executable given, so no piping
+  if (argc == 2) {
+    pid_t pid = fork();
+    if (pid == -1) {
+      perror("fork");
+      exit(EXIT_FAILURE);
+    }
+    if (pid == 0) { // child process
+      execlp(argv[1], argv[1], NULL);
+      perror("execlp"); // execlp only returns if there was an error
+      exit(EXIT_FAILURE);
+    }
+    // parent process
+    wait(NULL);
+    exit(EXIT_SUCCESS);
+  }
+  
+  int numPipes = argc-2; // need one less pipe than there are arguments
+  int pipes[numPipes][2]; // array [pipe][fd's]
+
+  // create pipes
   for (int i = 0; i < numPipes; i++) {
     if (pipe(pipes[i]) == -1) {
       perror("pipe");
@@ -18,8 +39,40 @@ int main(int argc, char *argv[])
     }
   }
 
-  */
+  for (int i = 0; i < argc-1; i++) {
+    pid_t pid = fork();
+    if (pid == -1) {
+      perror("fork");
+      exit(EXIT_FAILURE);
+    }
+    if (pid == 0) { // child process
+      if (i > 0) { // not first command
+	dup2(pipes[i-1][0], STDIN_FILENO); // set this child's stdin to be the read fd from the pipe previous to it
+      }
+      if (i < argc-2) { // not the last command
+	dup2(pipes[i][1], STDOUT_FILENO); // set the STDOUT to be the write of the this pipe
+      }
+      for (int j = 0; j < numPipes; j++) {
+	// close all pipes, STDOUT and STDIN file descriptors are set up
+	close(pipes[j][0]);
+	close(pipes[j][1]);
+      }
+      execlp(argv[i+1], argv[i+1], NULL);
+      perror("execlp");
+      exit(EXIT_FAILURE);
+    }
+  }
+  for (int i = 0; i < numPipes; i++) { // close all pipes
+    close(pipes[i][0]);
+    close(pipes[i][1]);
+  }
+  for (int i = 0; i < argc-1; i++) {
+    wait(NULL);
+  }
+  return 0;
+	
 
+  /*
   // implementing single-pipe version first for practice
 
   int pipefd[2];
@@ -70,6 +123,7 @@ int main(int argc, char *argv[])
   close(pipefd[1]);
   waitpid(pid1, NULL, 0);
   waitpid(pid2, NULL, 0);
+  */
   
   return 0;
 }
