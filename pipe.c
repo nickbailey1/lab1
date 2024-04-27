@@ -25,7 +25,11 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
     // parent process
-    wait(NULL);
+    int status;
+    waitpid(pid, &status, 0); // wait for the child process, put its exit message in status
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+      exit(EXIT_FAILURE);
+    }
     exit(EXIT_SUCCESS);
   }
   
