@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 2) {
     fprintf(stderr, "Must provide at least one argument.");
-    exit(EXIT_FAILURE);
+    exit(EINVAL);
   }
 
   // only one executable given, so no piping
@@ -69,7 +69,8 @@ int main(int argc, char *argv[])
   for (int i = 0; i < argc-1; i++) {
     wait(NULL);
   }
-  return 0;
+
+  exit(EXIT_SUCCESS);
 	
 
   /*
