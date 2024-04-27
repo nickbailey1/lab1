@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <signal.h>
 
 int main(int argc, char *argv[])
 {
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
   
   int numPipes = argc-2; // need one less pipe than there are arguments
   int pipes[numPipes][2]; // array [pipe][fd's]
+  int pids[argc-1]; // use to store all children pids
 
   // create pipes
   for (int i = 0; i < numPipes; i++) {
@@ -66,14 +68,18 @@ int main(int argc, char *argv[])
       perror("execlp");
       exit(EXIT_FAILURE);
     }
+    else { // parent process: add child's pid to array
+      pids[i] = pid;
+    }
   }
   for (int i = 0; i < numPipes; i++) { // close all pipes
     close(pipes[i][0]);
     close(pipes[i][1]);
-  }
+  } 
   // handle final exit code
   int status;
   int exit_status = EXIT_SUCCESS;
+  int error_occured = 0;
   for (int i = 0; i < argc-1; i++) {
     pid_t done = waitpid(-1, &status, 0);
     if (done == -1) {
@@ -82,7 +88,17 @@ int main(int argc, char *argv[])
     }
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
       exit_status = EXIT_FAILURE;
+      error_occured = 1;
+      break;
     }
+  }
+
+  if (error_occured) {
+    for (int i = 0; i < argc - 1; i++) {
+      kill(pids[i], SIGTERM);
+    }
+    fprintf(stderr, "A process failed, likely due to a bogus command");
+    exit_status = EXIT_FAILURE;
   }
 
   exit(exit_status);
